@@ -1,7 +1,7 @@
-FROM oven/bun:1
+FROM node:22-slim
 WORKDIR /app
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile || bun install
+COPY package.json ./
+RUN npm install
 COPY tsconfig.json ./
 COPY src ./src
-CMD ["bun", "run", "src/index.ts"]
+CMD ["npx", "tsx", "src/index.ts"]
