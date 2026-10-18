@@ -81,6 +81,12 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
     return;
   }
 
+  // Checked before any Jellyfin request is made
+  if (isBanned(query)) {
+    await say({ text: "I won't allow it", thread_ts });
+    return;
+  }
+
   try {
     const items = await search(query);
     if (items.length === 0) {
@@ -114,6 +120,7 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
     });
   } catch (err) {
     console.error(err);
+    await alert("jellyfin", `Jellyfin search failed: ${(err as Error).message}`);
     await say({ text: "Couldn't reach Jellyfin. Check the bot's logs.", thread_ts });
   }
 }
@@ -130,9 +137,6 @@ function isBanned(query: string): boolean {
 // Channel mentions: reply in a thread
 app.event("app_mention", async ({ event, say }) => {
   const query = event.text.replace(/<@[A-Z0-9]+>/g, "").trim();
-  if (isBanned(query)) {
-    await say("I won't allow it");
-  } 
   await replyWithResults(query, say, event.thread_ts ?? event.ts);
 });
 
