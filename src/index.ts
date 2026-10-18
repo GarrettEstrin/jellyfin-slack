@@ -15,6 +15,28 @@ function requireEnv(name: string): string {
 const JELLYFIN_URL = requireEnv("JELLYFIN_URL").replace(/\/$/, "");
 const JELLYFIN_API_KEY = requireEnv("JELLYFIN_API_KEY");
 
+const ALERT_WEBHOOK_URL = process.env.ALERT_WEBHOOK_URL; // optional
+
+const lastAlert = new Map<string, number>();
+
+// Posts to Slack, at most once per `key` per cooldown, so a failure loop can't spam the channel.
+async function alert(key: string, text: string, cooldownMs = 10 * 60_000) {
+  console.error(`[ALERT] ${text}`);
+  if (!ALERT_WEBHOOK_URL) return;
+  const now = Date.now();
+  if (now - (lastAlert.get(key) ?? 0) < cooldownMs) return;
+  lastAlert.set(key, now);
+  try {
+    await fetch(ALERT_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: `:rotating_light: jellyfin-slack: ${text}`.slice(0, 3000) }),
+    });
+  } catch (e) {
+    console.error("Failed to send alert", e);
+  }
+}
+
 
 const app = new App({
   token: requireEnv("SLACK_BOT_TOKEN"),
@@ -133,6 +155,24 @@ app.event("app_home_opened", async ({ event, client }) => {
       ],
     },
   });
+});
+
+// 1. In replyWithResults, inside the existing catch block:
+//    await alert("jellyfin", `Jellyfin search failed: ${(err as Error).message}`);
+
+// 2. Errors Bolt catches while handling events (like the earlier missing_scope):
+app.error(async (error) => {
+  await alert("bolt", `Unhandled Slack error: ${error.message}`);
+});
+
+// 3. Crashes: alert first, then exit so Docker restarts the container
+process.on("uncaughtException", async (err) => {
+  await alert("crash", `Crashed: ${err.message}`, 0);
+  process.exit(1);
+});
+process.on("unhandledRejection", async (reason) => {
+  await alert("crash", `Unhandled rejection: ${String(reason)}`, 0);
+  process.exit(1);
 });
 
 await app.start();
