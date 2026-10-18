@@ -120,6 +120,10 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
 
 function isBanned(query: string): boolean {
   const q = query.toLowerCase();
+  console.log({
+    query,
+    bannedQueries
+  })
   return [...bannedQueries].some((b) => q.includes(b));
 }
 
