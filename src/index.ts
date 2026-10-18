@@ -1,4 +1,7 @@
-import { App, type SayFn } from "@slack/bolt";
+import bolt from "@slack/bolt";
+import type { SayFn } from "@slack/bolt";
+
+const { App } = bolt;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
