@@ -105,5 +105,32 @@ app.message(async ({ message, say }) => {
   await replyWithResults((message.text ?? "").trim(), say);
 });
 
+// Home tab: show a short usage note when the app is opened
+app.event("app_home_opened", async ({ event, client }) => {
+  if (event.tab !== "home") return;
+
+  await client.views.publish({
+    user_id: event.user,
+    view: {
+      type: "home",
+      blocks: [
+        {
+          type: "header",
+          text: { type: "plain_text", text: "Jellyfin Search" },
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text:
+              "To search the library, click the *Messages* tab at the top of this window and send a movie or show title, like `harry potter`.\n\n" +
+              "In a channel, mention me with a title instead: `@Jellyfin Search harry potter`.",
+          },
+        },
+      ],
+    },
+  });
+});
+
 await app.start();
 console.log("Jellyfin Slack bot running");
