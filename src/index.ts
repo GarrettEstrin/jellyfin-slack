@@ -1,5 +1,7 @@
 import bolt from "@slack/bolt";
 import type { SayFn } from "@slack/bolt";
+import { readFile } from "node:fs/promises";
+
 import { bannedQueries } from "./banned";
 
 const { App } = bolt;
@@ -83,7 +85,13 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
 
   // Checked before any Jellyfin request is made
   if (isBanned(query)) {
-    await say({ text: "I won't allow it", thread_ts });
+    await say({
+      thread_ts,
+      text: "AH AH AH", // fallback text for notifications
+      blocks: [
+        { type: "image", image_url: "https://media1.tenor.com/m/tVAgNJ6-mVAAAAAd/you-didn%27t-say-the-magic-word-jurassic-park.gif", alt_text: "AH AH AH" },
+      ],
+    });
     return;
   }
 
