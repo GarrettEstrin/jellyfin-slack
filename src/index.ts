@@ -1,4 +1,4 @@
-import { App } from "@slack/bolt";
+import { App, type SayFn } from "@slack/bolt";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -49,14 +49,9 @@ async function search(query: string): Promise<Item[]> {
   return data.Items;
 }
 
-app.event("app_mention", async ({ event, say }) => {
-
-  // Strip the leading "<@U123ABC>" mention.
-  const query = event.text.replace(/<@[A-Z0-9]+>/g, "").trim();
-  const thread_ts = event.thread_ts ?? event.ts;
-
+async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
   if (!query) {
-    await say({ text: "Usage: `@bot <title>`", thread_ts });
+    await say({ text: "Send me a title to search for, e.g. `harry potter`.", thread_ts });
     return;
   }
 
@@ -93,11 +88,21 @@ app.event("app_mention", async ({ event, say }) => {
     });
   } catch (err) {
     console.error(err);
-    await say({
-      text: "Couldn't reach Jellyfin. Check the bot's logs.",
-      thread_ts,
-    });
+    await say({ text: "Couldn't reach Jellyfin. Check the bot's logs.", thread_ts });
   }
+}
+
+// Channel mentions: reply in a thread
+app.event("app_mention", async ({ event, say }) => {
+  const query = event.text.replace(/<@[A-Z0-9]+>/g, "").trim();
+  await replyWithResults(query, say, event.thread_ts ?? event.ts);
+});
+
+// Direct messages: every message is a search, no @mention needed
+app.message(async ({ message, say }) => {
+  if (message.subtype !== undefined) return; // ignore edits, bot messages, etc.
+  if (message.channel_type !== "im") return; // channels are handled by app_mention
+  await replyWithResults((message.text ?? "").trim(), say);
 });
 
 await app.start();
