@@ -177,3 +177,4 @@ process.on("unhandledRejection", async (reason) => {
 
 await app.start();
 console.log("Jellyfin Slack bot running");
+await alert("start", "Jellyfin Slack bot started");
