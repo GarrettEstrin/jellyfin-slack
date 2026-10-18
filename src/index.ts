@@ -89,7 +89,7 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
       thread_ts,
       text: "AH AH AH", // fallback text for notifications
       blocks: [
-        { type: "image", image_url: "https://media1.tenor.com/m/tVAgNJ6-mVAAAAAd/you-didn%27t-say-the-magic-word-jurassic-park.gif", alt_text: "AH AH AH" },
+        { type: "image", image_url: "https://media1.tenor.com/m/-7O97UYmqcIAAAAC/magic-word.gif", alt_text: "AH AH AH" },
       ],
     });
     return;
