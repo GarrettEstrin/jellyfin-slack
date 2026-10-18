@@ -1,5 +1,6 @@
 import bolt from "@slack/bolt";
 import type { SayFn } from "@slack/bolt";
+import { bannedQueries } from "./banned";
 
 const { App } = bolt;
 
@@ -117,9 +118,17 @@ async function replyWithResults(query: string, say: SayFn, thread_ts?: string) {
   }
 }
 
+function isBanned(query: string): boolean {
+  const q = query.toLowerCase();
+  return [...bannedQueries].some((b) => q.includes(b));
+}
+
 // Channel mentions: reply in a thread
 app.event("app_mention", async ({ event, say }) => {
   const query = event.text.replace(/<@[A-Z0-9]+>/g, "").trim();
+  if (isBanned(query)) {
+    await say("I won't allow it");
+  } 
   await replyWithResults(query, say, event.thread_ts ?? event.ts);
 });
 
